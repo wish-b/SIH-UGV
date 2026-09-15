@@ -1,0 +1,37 @@
+/* Dynamic Steering & Yielding Status Tags */
+.fsd-mode-tag {
+  background: rgba(0, 102, 255, 0.4);
+  color: #fff;
+  border-color: rgba(0, 210, 255, 0.5);
+  transition: background 0.3s ease;
+}
+
+body.mode-defense .fsd-mode-tag {
+  background: rgba(80, 250, 120, 0.3);
+  color: #50fa7b;
+  border-color: #50fa7b;
+}
+
+/* Yellow Yielding Alert HUD Tag */
+.risk-yielding {
+  background: rgba(255, 170, 0, 0.25);
+  color: #ffaa00;
+  border-color: #ffaa00;
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.3);
+}
+
+/* Steering Curvature Readout Card */
+#val-steer {
+  font-family: var(--font-mono);
+  font-weight: 700;
+}
+
+/* Visual Sector clearance box blocked & oncoming indicators */
+.sector-box.blocked {
+  border-color: var(--accent-red) !important;
+  background: rgba(255, 51, 68, 0.15) !important;
+}
+
+.sector-box.blocked .s-val {
+  color: var(--accent-red) !important;
+}

@@ -1,0 +1,63 @@
+/* Custom Leaflet Map Skin */
+.leaflet-container {
+  background: #090e17 !important;
+  font-family: var(--font-display) !important;
+}
+
+.leaflet-tile {
+  filter: invert(100%) hue-rotate(190deg) brightness(85%) contrast(90%) saturate(140%);
+}
+
+body.mode-defense .leaflet-tile {
+  filter: invert(100%) hue-rotate(90deg) brightness(75%) contrast(120%) saturate(160%);
+}
+
+.map-floating-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 500;
+  display: flex;
+  gap: 4px;
+}
+.btn-map-control {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+.btn-map-control.active {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  background: rgba(0, 210, 255, 0.15);
+}
+
+/* Custom Marker Styling */
+.ugv-marker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s linear;
+}
+.ugv-pin-core {
+  width: 20px;
+  height: 20px;
+  background: var(--accent-cyan);
+  border: 2px solid #fff;
+  border-radius: 4px;
+  box-shadow: 0 0 12px var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ugv-pin-heading {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 8px solid #fff;
+}

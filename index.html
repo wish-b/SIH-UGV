@@ -1,1 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>UGV Autonomous Command & Perception Station</title>
 
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Leaflet Fallback / OpenStreetMap -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Modular Styles -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/map.css" />
+    <link rel="stylesheet" href="css/perception.css" />
+  </head>
+  <body class="mode-commercial theme-day">
+    <!-- TOP BAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo">
+          <i data-lucide="shield-check" class="brand-icon"></i>
+          <span>NEO-ROVER <small>UGV-v4.2</small></span>
+        </div>
+        <div class="badge mode-badge" id="current-mode-label">
+          COMMERCIAL OPS
+        </div>
+        <div class="status-indicator">
+          <span class="status-dot green pulse" id="sys-status-dot"></span>
+          <span id="sys-status-text">SYS ONLINE</span>
+        </div>
+      </div>
+
+      <div class="topbar-center sensor-cluster">
+        <div class="sensor-chip" id="chip-gps">
+          <i data-lucide="satellite"></i> GPS <span class="dot">●</span>
+        </div>
+        <div class="sensor-chip" id="chip-cam">
+          <i data-lucide="camera"></i> CAM <span class="dot">●</span>
+        </div>
+        <div class="sensor-chip" id="chip-lidar">
+          <i data-lucide="radar"></i> LIDAR <span class="dot">●</span>
+        </div>
+        <div class="sensor-chip" id="chip-imu">
+          <i data-lucide="compass"></i> IMU <span class="dot">●</span>
+        </div>
+        <div class="sensor-chip" id="chip-comm">
+          <i data-lucide="radio"></i> COMMS <span class="dot">●</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <div class="telemetry-pill">
+          <i data-lucide="battery-charging" class="pill-icon text-cyan"></i>
+          <span id="top-battery">98%</span>
+        </div>
+        <div class="telemetry-pill">
+          <i data-lucide="gauge" class="pill-icon text-green"></i>
+          <span id="top-speed">0.0 km/h</span>
+        </div>
+        <div class="telemetry-pill">
+          <i data-lucide="navigation" class="pill-icon text-amber"></i>
+          <span id="top-heading">000° N</span>
+        </div>
+        <div class="telemetry-pill coords-pill">
+          <span id="top-coords">28.4744° N, 77.5040° E</span>
+        </div>
+        <button
+          class="icon-btn"
+          id="btn-toggle-defense"
+          title="Toggle Tactical Defense Mode"
+        >
+          <i data-lucide="shield-alert"></i>
+        </button>
+        <button
+          class="icon-btn"
+          id="btn-presentation-mode"
+          title="Toggle Presentation Focus"
+        >
+          <i data-lucide="maximize-2"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="workspace-grid" id="main-workspace">
+      <!-- LEFT SIDEBAR: MISSION CONTROL -->
+      <aside class="sidebar left-sidebar" id="left-panel">
+        <div class="sidebar-header">
+          <h3><i data-lucide="sliders"></i> MISSION CONTROL</h3>
+          <span class="version-tag">AUTO-NAV v3.1</span>
+        </div>
+
+        <div class="sidebar-scrollable">
+          <!-- Quick Action Grid -->
+          <div class="quick-actions">
+            <button class="btn btn-primary" id="btn-start-demo">
+              <i data-lucide="play-circle"></i> AUTO DEMO
+            </button>
+            <button class="btn btn-accent" id="btn-gen-mission">
+              <i data-lucide="refresh-cw"></i> GEN MISSION
+            </button>
+          </div>
+
+          <!-- Mode & Environment Controls -->
+          <section class="control-group">
+            <label class="section-label">ENVIRONMENT & WEATHER</label>
+            <div class="select-row">
+              <select id="env-select" class="form-select">
+                <option value="CITY">Urban City</option>
+                <option value="CAMPUS" selected>
+                  Tech Campus (Greater Noida)
+                </option>
+                <option value="INDUSTRIAL">Industrial Hub</option>
+                <option value="HIGHWAY">Expressway Corridor</option>
+                <option value="RURAL">Rural Road</option>
+                <option value="MOUNTAIN">Mountain Pass</option>
+              </select>
+              <select id="weather-select" class="form-select">
+                <option value="CLEAR" selected>Clear</option>
+                <option value="RAIN">Rain (Reduced Friction)</option>
+                <option value="FOG">Dense Fog (Limited Sight)</option>
+                <option value="NIGHT">Night Operations</option>
+              </select>
+            </div>
+          </section>
+
+          <!-- Route & Waypoints -->
+          <section class="control-group">
+            <div class="section-label-row">
+              <label class="section-label">ROUTE WAYPOINTS</label>
+              <button class="btn-micro" id="btn-add-wpt">
+                <i data-lucide="plus"></i> Add WPT
+              </button>
+            </div>
+            <div class="location-summary" id="route-addresses">
+              <div>
+                <span class="point-tag origin">A</span>
+                <span id="lbl-origin">Knowledge Park III, Greater Noida</span>
+              </div>
+              <div>
+                <span class="point-tag dest">B</span>
+                <span id="lbl-destination"
+                  >Pari Chowk Terminal, Greater Noida</span
+                >
+              </div>
+            </div>
+            <ul class="waypoint-list" id="waypoint-container">
+              <!-- Dynamic Waypoint Cards -->
+            </ul>
+          </section>
+
+          <!-- Simulation Execution Controls -->
+          <section class="control-group">
+            <label class="section-label">PLAYBACK & DRIFT</label>
+            <div class="sim-btn-grid">
+              <button class="btn btn-success" id="btn-sim-start">
+                <i data-lucide="play"></i> Run
+              </button>
+              <button class="btn btn-warning" id="btn-sim-pause">
+                <i data-lucide="pause"></i> Pause
+              </button>
+              <button class="btn btn-secondary" id="btn-sim-reset">
+                <i data-lucide="rotate-ccw"></i> Reset
+              </button>
+            </div>
+            <div class="speed-slider-row">
+              <span>Rate:</span>
+              <button class="btn-speed active" data-speed="1">1×</button>
+              <button class="btn-speed" data-speed="2">2×</button>
+              <button class="btn-speed" data-speed="5">5×</button>
+            </div>
+            <button class="btn btn-danger btn-estop" id="btn-estop">
+              <i data-lucide="alert-octagon"></i> EMERGENCY HALT
+            </button>
+          </section>
+
+          <!-- Interactive Obstacle Spawner -->
+          <section class="control-group">
+            <label class="section-label">SPAWN INTERACTIVE HAZARD</label>
+            <div class="spawn-btn-row">
+              <button class="btn-tool" data-spawn="CAR">
+                <i data-lucide="car"></i> Car
+              </button>
+              <button class="btn-tool" data-spawn="PERSON">
+                <i data-lucide="user"></i> Pedestrian
+              </button>
+              <button class="btn-tool" data-spawn="BARRIER">
+                <i data-lucide="cone"></i> Barrier
+              </button>
+              <button class="btn-tool" data-spawn="DEBRIS">
+                <i data-lucide="box"></i> Debris
+              </button>
+            </div>
+            <p class="tool-hint">
+              Click a button, then click on the map to manually inject an
+              obstacle.
+            </p>
+          </section>
+
+          <!-- Voice Controls -->
+          <section class="control-group">
+            <label class="section-label">VOICE COMMANDS</label>
+            <div class="flex-row">
+              <button
+                class="btn btn-ghost voice-command-btn"
+                id="btn-voice-toggle"
+                title="Commands: start, stop, emergency stop, change lane left, change lane right"
+              >
+                <i data-lucide="mic"></i> Voice: Off
+              </button>
+            </div>
+            <p class="tool-hint">
+              Try: “start”, “stop”, “emergency stop”, “change lane left”, or
+              “change lane right”.
+            </p>
+          </section>
+        </div>
+      </aside>
+
+      <!-- CENTER CANVAS: FSD PERCEPTION HUD + MAP DUAL-VIEW -->
+      <section class="center-stage">
+        <!-- Upper: Tesla FSD 3D-Isometric Perception Canvas -->
+        <div class="fsd-container" id="hud-container">
+          <canvas id="fsd-canvas"></canvas>
+
+          <div class="fsd-overlay-ui">
+            <div class="fsd-badge fsd-mode-tag" id="fsd-state-tag">
+              CRUISING
+            </div>
+            <div class="fsd-badge fsd-risk-tag risk-safe" id="fsd-risk-tag">
+              RISK: SAFE
+            </div>
+            <div class="fsd-ttc-counter" id="fsd-ttc-display">TTC: --.-s</div>
+          </div>
+
+          <div class="ai-speech-bubble" id="ai-announcement">
+            <i data-lucide="bot"></i>
+            <span id="ai-thought-text"
+              >Trajectory clear. All sensor streams within nominal safety
+              thresholds.</span
+            >
+          </div>
+        </div>
+
+        <!-- Lower: Map Navigation -->
+        <div class="map-container" id="map-wrapper">
+          <div id="leaflet-map"></div>
+          <div class="map-floating-panel">
+            <div class="layer-toggles">
+              <button class="btn-map-control active" id="btn-toggle-route">
+                Route
+              </button>
+              <button class="btn-map-control active" id="btn-toggle-hazards">
+                Hazards
+              </button>
+              <button class="btn-map-control active" id="btn-toggle-radars">
+                LiDAR Rings
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT SIDEBAR: AI PERCEPTION & TELEMETRY -->
+      <aside class="sidebar right-sidebar" id="right-panel">
+        <div class="sidebar-header">
+          <h3><i data-lucide="cpu"></i> PERCEPTION MATRIX</h3>
+          <span class="object-counter" id="live-obj-count">0 Tracked</span>
+        </div>
+
+        <div class="sidebar-scrollable">
+          <!-- Live Danger / Critical Notification Alert Box -->
+          <div class="danger-banner hidden" id="collision-alert-banner">
+            <i data-lucide="triangle-alert" class="flash"></i>
+            <div class="alert-content">
+              <h4 id="alert-title">COLLISION WARNING</h4>
+              <p id="alert-desc">
+                Obstacle in safety envelope. Commencing immediate deceleration.
+              </p>
+            </div>
+          </div>
+
+          <!-- Telemetry Graphs -->
+          <section class="control-group">
+            <label class="section-label">REAL-TIME TELEMETRY</label>
+            <div class="telemetry-chart-wrap">
+              <canvas id="telemetryChart" height="110"></canvas>
+            </div>
+            <div class="metrics-grid">
+              <div class="metric-card">
+                <span class="m-label">THROTTLE</span>
+                <span class="m-value" id="val-throttle">35%</span>
+              </div>
+              <div class="metric-card">
+                <span class="m-label">BRAKE FORCE</span>
+                <span class="m-value" id="val-brake">0.0 kN</span>
+              </div>
+              <div class="metric-card">
+                <span class="m-label">AI LATENCY</span>
+                <span class="m-value text-green" id="val-latency">14 ms</span>
+              </div>
+              <div class="metric-card">
+                <span class="m-label">SATELLITES</span>
+                <span class="m-value" id="val-sats">16 (RTK Fix)</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Live Tracked Entities List -->
+          <section class="control-group">
+            <label class="section-label"
+              >LIVE DETECTIONS (SORTED BY PROXIMITY)</label
+            >
+            <div class="perception-card-list" id="perception-entities">
+              <!-- Dynamic Object Cards -->
+            </div>
+          </section>
+
+          <!-- Mission Audit Logs -->
+          <section class="control-group">
+            <label class="section-label">MISSION LOG STREAM</label>
+            <div class="terminal-log" id="mission-log-stream">
+              <div class="log-entry log-sys">
+                [INIT] UGV Subsystems Operational.
+              </div>
+              <div class="log-entry log-sys">
+                [GPS] RTK-GNSS fix locked to 14 satellites.
+              </div>
+            </div>
+          </section>
+        </div>
+      </aside>
+    </main>
+
+    <!-- OBJECT INSPECTION MODAL -->
+    <div class="modal-backdrop hidden" id="obj-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h4 id="modal-obj-title">OBJECT DETAILS</h4>
+          <button class="close-modal" id="btn-close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-obj-body">
+          <!-- Injected dynamic details -->
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="btn-modal-close">
+            Dismiss
+          </button>
+          <button class="btn btn-danger" id="btn-modal-delete">
+            Remove Object
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/objects.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/telemetry.js"></script>
+    <script src="js/communication.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/perception.js"></script>
+    <script src="js/voice.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
